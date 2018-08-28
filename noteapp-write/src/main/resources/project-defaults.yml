@@ -1,0 +1,33 @@
+swarm:
+  context:
+    path: /
+  mongodb:
+    mongos:
+      mongodbwriteeventstore:
+        database: ${eventstore.database}
+        jndi-name: java:jboss/mongodb/eventstore
+        id: mongodbwriteeventstore
+        module: org.mongodb.driver
+        security-domain: mongoRealm
+        hosts:
+          mongoeventstorehost:
+            outbound-socket-binding-ref: mongoeventstorehost
+  security:
+    security-domains:
+      mongoRealm:
+        classic-authentication:
+          login-modules:
+            ConfiguredIdentity:
+              code: ConfiguredIdentity
+              flag: required
+              module-options:
+                principal: ${eventstore.username}
+                password: ${eventstore.password}
+                username: ${eventstore.username}
+  network:
+    socket-binding-groups:
+      standard-sockets:
+        outbound-socket-bindings:
+          mongoeventstorehost:
+            remote-host: ${eventstore.remote-host}
+            remote-port: ${eventstore.remote-port}

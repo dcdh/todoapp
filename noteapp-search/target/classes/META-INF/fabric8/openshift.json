@@ -1,0 +1,182 @@
+{
+  "apiVersion" : "v1",
+  "kind" : "List",
+  "items" : [ {
+    "apiVersion" : "v1",
+    "kind" : "Service",
+    "metadata" : {
+      "annotations" : {
+        "fabric8.io/iconUrl" : "img/icons/wildfly.svg",
+        "prometheus.io/port" : "9779",
+        "prometheus.io/scrape" : "true"
+      },
+      "labels" : {
+        "expose" : "true",
+        "git-branch" : "",
+        "project" : "noteapp-search",
+        "git-commit-id" : "",
+        "app" : "noteapp-search",
+        "provider" : "fabric8",
+        "version" : "0.0.1-SNAPSHOT",
+        "group" : "com.damdamdeo"
+      },
+      "name" : "noteapp-search"
+    },
+    "spec" : {
+      "ports" : [ {
+        "name" : "http",
+        "port" : 8080,
+        "protocol" : "TCP",
+        "targetPort" : 8080
+      } ],
+      "selector" : {
+        "app" : "noteapp-search",
+        "provider" : "fabric8",
+        "group" : "com.damdamdeo"
+      }
+    }
+  }, {
+    "apiVersion" : "apps.openshift.io/v1",
+    "kind" : "DeploymentConfig",
+    "metadata" : {
+      "annotations" : {
+        "fabric8.io/iconUrl" : "img/icons/wildfly.svg",
+        "fabric8.io/metrics-path" : "dashboard/file/kubernetes-pods.json/?var-project=noteapp-search&var-version=0.0.1-SNAPSHOT"
+      },
+      "labels" : {
+        "app" : "noteapp",
+        "git-branch" : "",
+        "project" : "noteapp-search",
+        "git-commit-id" : "",
+        "provider" : "fabric8",
+        "version" : "0.0.1-SNAPSHOT",
+        "group" : "com.damdamdeo"
+      },
+      "name" : "noteapp-search"
+    },
+    "spec" : {
+      "replicas" : 1,
+      "revisionHistoryLimit" : 2,
+      "selector" : {
+        "app" : "noteapp-search",
+        "provider" : "fabric8",
+        "group" : "com.damdamdeo"
+      },
+      "strategy" : {
+        "rollingParams" : {
+          "timeoutSeconds" : 3600
+        },
+        "type" : "Rolling"
+      },
+      "template" : {
+        "metadata" : {
+          "annotations" : {
+            "fabric8.io/iconUrl" : "img/icons/wildfly.svg",
+            "fabric8.io/metrics-path" : "dashboard/file/kubernetes-pods.json/?var-project=noteapp-search&var-version=0.0.1-SNAPSHOT"
+          },
+          "labels" : {
+            "git-branch" : "",
+            "project" : "noteapp-search",
+            "git-commit-id" : "",
+            "app" : "noteapp-search",
+            "provider" : "fabric8",
+            "version" : "0.0.1-SNAPSHOT",
+            "group" : "com.damdamdeo"
+          }
+        },
+        "spec" : {
+          "containers" : [ {
+            "env" : [ {
+              "name" : "KUBERNETES_NAMESPACE",
+              "valueFrom" : {
+                "fieldRef" : {
+                  "fieldPath" : "metadata.namespace"
+                }
+              }
+            }, {
+              "name" : "JAVA_OPTIONS",
+              "value" : "-Deventstore.username=devuser\n\t\t\t\t\t\t\t\t\t\t-Deventstore.password=devpassword\n\t\t\t\t\t\t\t\t\t\t-Deventstore.database=eventstoredb\n\t\t\t\t\t\t\t\t\t\t-Deventstore.remote-host=eventstore-database.$(KUBERNETES_NAMESPACE).svc\n\t\t\t\t\t\t\t\t\t\t-Deventstore.remote-port=27017\n\t\t\t\t\t\t\t\t\t\t-Dsolr.baseSolrUrl=http://solr.$(KUBERNETES_NAMESPACE).svc:8983/solr/mycores"
+            }, {
+              "name" : "JAVA_ENABLE_DEBUG",
+              "value" : "true"
+            } ],
+            "image" : "developer/noteapp-search:0.0.1-SNAPSHOT",
+            "imagePullPolicy" : "IfNotPresent",
+            "livenessProbe" : {
+              "httpGet" : {
+                "path" : "/api/service/ready",
+                "port" : 8080,
+                "scheme" : "HTTP"
+              },
+              "initialDelaySeconds" : 180
+            },
+            "name" : "wildfly-swarm",
+            "ports" : [ {
+              "containerPort" : 8080,
+              "name" : "http",
+              "protocol" : "TCP"
+            }, {
+              "containerPort" : 9779,
+              "name" : "prometheus",
+              "protocol" : "TCP"
+            }, {
+              "containerPort" : 8778,
+              "name" : "jolokia",
+              "protocol" : "TCP"
+            }, {
+              "containerPort" : 5005,
+              "name" : "debug"
+            } ],
+            "readinessProbe" : {
+              "httpGet" : {
+                "path" : "/api/service/ready",
+                "port" : 8080,
+                "scheme" : "HTTP"
+              },
+              "initialDelaySeconds" : 10
+            },
+            "securityContext" : {
+              "privileged" : false
+            }
+          } ]
+        }
+      },
+      "triggers" : [ {
+        "type" : "ConfigChange"
+      }, {
+        "imageChangeParams" : {
+          "automatic" : true,
+          "containerNames" : [ "wildfly-swarm" ],
+          "from" : {
+            "kind" : "ImageStreamTag",
+            "name" : "noteapp-search:0.0.1-SNAPSHOT",
+            "namespace" : "developer"
+          }
+        },
+        "type" : "ImageChange"
+      } ]
+    }
+  }, {
+    "apiVersion" : "route.openshift.io/v1",
+    "kind" : "Route",
+    "metadata" : {
+      "labels" : {
+        "expose" : "true",
+        "app" : "noteapp-search",
+        "provider" : "fabric8",
+        "version" : "0.0.1-SNAPSHOT",
+        "group" : "com.damdamdeo"
+      },
+      "name" : "noteapp-search"
+    },
+    "spec" : {
+      "port" : {
+        "targetPort" : 8080
+      },
+      "to" : {
+        "kind" : "Service",
+        "name" : "noteapp-search"
+      }
+    }
+  } ]
+}

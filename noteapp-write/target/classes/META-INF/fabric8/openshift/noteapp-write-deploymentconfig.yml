@@ -1,0 +1,94 @@
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    fabric8.io/iconUrl: img/icons/wildfly.svg
+    fabric8.io/metrics-path: dashboard/file/kubernetes-pods.json/?var-project=noteapp-write&var-version=0.0.1-SNAPSHOT
+  labels:
+    app: noteapp
+    git-branch: ""
+    project: noteapp-write
+    git-commit-id: ""
+    provider: fabric8
+    version: 0.0.1-SNAPSHOT
+    group: com.damdamdeo
+  name: noteapp-write
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    app: noteapp-write
+    provider: fabric8
+    group: com.damdamdeo
+  strategy:
+    rollingParams:
+      timeoutSeconds: 3600
+    type: Rolling
+  template:
+    metadata:
+      annotations:
+        fabric8.io/iconUrl: img/icons/wildfly.svg
+        fabric8.io/metrics-path: dashboard/file/kubernetes-pods.json/?var-project=noteapp-write&var-version=0.0.1-SNAPSHOT
+      labels:
+        git-branch: ""
+        project: noteapp-write
+        git-commit-id: ""
+        app: noteapp-write
+        provider: fabric8
+        version: 0.0.1-SNAPSHOT
+        group: com.damdamdeo
+    spec:
+      containers:
+      - env:
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: JAVA_OPTIONS
+          value: "-Deventstore.username=devuser\n\t\t\t\t\t\t\t\t\t\t-Deventstore.password=devpassword\n\
+            \t\t\t\t\t\t\t\t\t\t-Deventstore.database=eventstoredb\n\t\t\t\t\t\t\t\
+            \t\t\t-Deventstore.remote-host=eventstore-database.$(KUBERNETES_NAMESPACE).svc\n\
+            \t\t\t\t\t\t\t\t\t\t-Deventstore.remote-port=27017"
+        - name: JAVA_ENABLE_DEBUG
+          value: "true"
+        image: developer/noteapp-write:0.0.1-SNAPSHOT
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /api/service/ready
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 180
+        name: wildfly-swarm
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 9779
+          name: prometheus
+          protocol: TCP
+        - containerPort: 8778
+          name: jolokia
+          protocol: TCP
+        - containerPort: 5005
+          name: debug
+        readinessProbe:
+          httpGet:
+            path: /api/service/ready
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+        securityContext:
+          privileged: false
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - wildfly-swarm
+      from:
+        kind: ImageStreamTag
+        name: noteapp-write:0.0.1-SNAPSHOT
+        namespace: developer
+    type: ImageChange

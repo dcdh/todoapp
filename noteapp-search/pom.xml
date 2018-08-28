@@ -1,0 +1,215 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.damdamdeo</groupId>
+		<artifactId>noteapp-parent</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+	<packaging>war</packaging>
+	<artifactId>noteapp-search</artifactId>
+
+	<properties>
+		<version.wildfly.swarm>2018.5.0</version.wildfly.swarm>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<failOnMissingWebXml>false</failOnMissingWebXml>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<build>
+		<finalName>${project.artifactId}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.12.2</version>
+			</plugin>
+			<plugin>
+				<groupId>org.wildfly.swarm</groupId>
+				<artifactId>wildfly-swarm-plugin</artifactId>
+				<version>${version.wildfly.swarm}</version>
+				<configuration>
+					<properties>
+						<java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
+					</properties>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>package</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.wildfly.swarm</groupId>
+				<artifactId>bom-all</artifactId>
+				<version>${version.wildfly.swarm}</version>
+				<scope>import</scope>
+				<type>pom</type>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<!-- api -->
+		<dependency>
+			<groupId>com.damdamdeo</groupId>
+			<artifactId>noteapp-api</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<!-- axon -->
+		<dependency>
+			<groupId>com.damdamdeo</groupId>
+			<artifactId>axon-cdi</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.axonframework</groupId>
+			<artifactId>axon-mongo</artifactId>
+		</dependency>
+		<!-- WildFly Thorntail Fractions -->
+		<dependency>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>jaxrs</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>cdi</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>jolokia</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>logging</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>mongodb</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.wildfly.swarm</groupId>
+					<artifactId>config-api-runtime</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>swagger</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>swagger-webapp</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wildfly.swarm</groupId>
+			<artifactId>monitor</artifactId>
+		</dependency>
+		<!-- solr -->
+		<dependency>
+			<groupId>org.apache.solr</groupId>
+			<artifactId>solr-solrj</artifactId>
+			<version>6.4.1</version>
+		</dependency>
+		<!-- support -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		<!-- test -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version><!--$NO-MVN-MAN-VER$ -->
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+		</profile>
+		<profile>
+			<id>openshift</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.fabric8</groupId>
+						<artifactId>fabric8-maven-plugin</artifactId>
+						<version>3.5.38</version>
+						<executions>
+							<execution>
+								<goals>
+									<goal>resource</goal>
+									<goal>build</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<buildStrategy>docker</buildStrategy>
+							<namespace>${image-namespace}</namespace>
+							<generator>
+								<includes>
+									<include>wildfly-swarm</include>
+								</includes>
+								<excludes>
+									<exclude>webapp</exclude>
+								</excludes>
+								<config>
+									<wildfly-swarm>
+										<name>%g/%a:%v</name>
+									</wildfly-swarm>
+								</config>
+							</generator>
+							<enricher>
+								<config>
+									<fmp-git></fmp-git>
+									<wildfly-swarm-health-check>
+										<port>8080</port>
+										<scheme>HTTP</scheme>
+										<path>/api/service/ready</path>
+									</wildfly-swarm-health-check>
+								</config>
+							</enricher>
+							<resources>
+								<env>
+									<JAVA_OPTIONS>-Deventstore.username=devuser
+										-Deventstore.password=devpassword
+										-Deventstore.database=eventstoredb
+										-Deventstore.remote-host=eventstore-database.$(KUBERNETES_NAMESPACE).svc
+										-Deventstore.remote-port=27017
+										-Dsolr.baseSolrUrl=http://solr.$(KUBERNETES_NAMESPACE).svc:8983/solr/mycores</JAVA_OPTIONS>
+								</env>
+								<labels>
+									<all>
+										<project>${project.artifactId}</project>
+										<git-branch>${git.branch}</git-branch>
+										<git-commit-id>${git.commit.id}</git-commit-id>
+										<!-- Caractères invalides: les labels doivent respecter cette regex 
+											(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?') -->
+										<!-- <git-commit-message-full>${git.commit.message.full}</git-commit-message-full> -->
+										<!-- <git-build-time>${git.build.time}</git-build-time> -->
+									</all>
+									<deployment>
+										<app>noteapp</app>
+									</deployment>
+								</labels>
+							</resources>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
+</project>
