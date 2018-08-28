@@ -46,6 +46,8 @@ objects:
     replicas: 1
     selector:
       name: eventstore-database
+    triggers:
+      - type: ConfigChange
     strategy:
       type: Recreate
     template:
@@ -179,7 +181,6 @@ objects:
       targetPort: 8983
     selector:
       app: solr
-      deploymentconfig: solr
     sessionAffinity: None
     type: ClusterIP
 - apiVersion: v1
@@ -202,7 +203,8 @@ objects:
     replicas: 1
     selector:
       app: solr
-      deploymentconfig: solr
+    triggers:
+      - type: ConfigChange
     strategy:
       activeDeadlineSeconds: 21600
       rollingParams:
@@ -227,7 +229,6 @@ objects:
       metadata:
         labels:
           app: solr
-          deploymentconfig: solr
       spec:
         containers:
         - image: giantswarm/tiny-tools
