@@ -1,3 +1,0 @@
-commandBus: SIMPLE
-eventCountSnapshotTriggerDefinition:
-  threshold: 3
