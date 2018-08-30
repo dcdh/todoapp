@@ -14,7 +14,19 @@ objects:
   subjects:
   - kind: ServiceAccount
     name: default
-# mongo write event store database (version ephemere)
+# mongo write event store database (version ephemere) + rest
+- apiVersion: v1
+  kind: Route
+  metadata:
+    labels:
+      app: eventstore-database-rest
+    name: eventstore-database-rest
+  spec:
+    port:
+      targetPort: 3000
+    to:
+      kind: Service
+      name: eventstore-database
 - apiVersion: v1
   kind: Service
   metadata:
@@ -28,6 +40,11 @@ objects:
       port: 27017
       protocol: TCP
       targetPort: 27017
+    - name: mongo-rest
+      nodePort: 0
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
     selector:
       name: eventstore-database
     sessionAffinity: None
@@ -46,8 +63,6 @@ objects:
     replicas: 1
     selector:
       name: eventstore-database
-    triggers:
-      - type: ConfigChange
     strategy:
       type: Recreate
     template:
@@ -59,13 +74,13 @@ objects:
         - capabilities: {}
           env:
           - name: MONGODB_USER
-            value: devuser
+            value: ${MONGODB_USER}
           - name: MONGODB_PASSWORD
-            value: devpassword
+            value: ${MONGODB_PASSWORD}
           - name: MONGODB_ADMIN_PASSWORD
-            value: adminpassword
+            value: ${MONGODB_ADMIN_PASSWORD}
           - name: MONGODB_DATABASE
-            value: eventstoredb
+            value: ${MONGODB_DATABASE}
           image: centos/mongodb-36-centos7
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -83,7 +98,7 @@ objects:
               - "/bin/sh"
               - "-i"
               - "-c"
-              - mongo 127.0.0.1:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+              - mongo 127.0.0.1:27017/$(MONGODB_DATABASE) -u $(MONGODB_USER) -p $(MONGODB_PASSWORD)
                 --eval="quit()"
             initialDelaySeconds: 3
             timeoutSeconds: 1
@@ -97,75 +112,22 @@ objects:
           volumeMounts:
           - mountPath: "/var/lib/mongodb/data"
             name: eventstore-database-data
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        volumes:
-        - emptyDir:
-            medium: ''
-          name: eventstore-database-data
-# eventstore mongo rest api
-- apiVersion: v1
-  kind: Route
-  metadata:
-    name: eventstore-database-rest
-  spec:
-    port:
-      targetPort: 3000
-    to:
-      kind: Service
-      name: eventstore-database-rest
-- kind: Service
-  apiVersion: v1
-  metadata:
-    name: eventstore-database-rest
-    labels:
-      name: eventstore-database-rest
-  spec:
-    type: LoadBalancer
-    ports:
-    - port: 3000
-      targetPort: 3000
-      protocol: TCP
-    selector:
-      name: eventstore-database-rest
-- kind: DeploymentConfig
-  apiVersion: v1
-  metadata:
-    annotations:
-    name: eventstore-database-rest
-    labels:
-      name: eventstore-database-rest
-  spec:
-    replicas: 1
-    selector:
-      name: eventstore-database-rest
-    triggers:
-      - type: ConfigChange
-    template:
-      metadata:
-        labels:
-          name: eventstore-database-rest
-      spec:
-        initContainers:
-        - name: wait-for-eventstore-database
-          image: giantswarm/tiny-tools
-          command: ["sh", "-c", "while `curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt --header \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/deploymentconfigs/eventstore-database | jq \".status.availableReplicas == 0\"` ; do echo \"waiting for eventstore-database\"; sleep 2; done; exit 0;"]
-        containers:
         - name: eventstore-database-rest
           env:
-          - name: KUBERNETES_NAMESPACE
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: metadata.namespace
           - name: ME_CONFIG_DBSTRING
-            value: mongodb://devuser:devpassword@eventstore-database.$(KUBERNETES_NAMESPACE).svc:27017/eventstoredb
+            value: mongodb://${MONGODB_USER}:${MONGODB_PASSWORD}@localhost:27017/${MONGODB_DATABASE}
           - name: ME_CONFIG_READONLY
             value: y
           image: linuxenko/mongo-rest
           ports:
           - containerPort: 3000
             protocol: TCP
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        volumes:
+        - emptyDir:
+            medium: ''
+          name: eventstore-database-data
 # solr
 - apiVersion: v1
   kind: Service
@@ -186,6 +148,8 @@ objects:
 - apiVersion: v1
   kind: Route
   metadata:
+    labels:
+      app: solr
     name: solr
   spec:
     port:
@@ -276,6 +240,8 @@ objects:
 - apiVersion: v1
   kind: Route
   metadata:
+    labels:
+      app: todoapp-write
     name: todoapp-write
   spec:
     port:
@@ -286,6 +252,8 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
+    labels:
+      app: todoapp-write
     name: todoapp-write
   spec:
     ports:
@@ -298,6 +266,8 @@ objects:
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
+    labels:
+      app: todoapp-write
     name: todoapp-write
     annotations:
   spec:
@@ -312,14 +282,14 @@ objects:
           name: todoapp-write
       spec:
         initContainers:
-        - name: wait-for-eventstore-mongo-rest-api
+        - name: wait-for-eventstore-database-pod
           image: giantswarm/tiny-tools
-          command: ["sh", "-c", "while `curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt --header \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/deploymentconfigs/eventstore-database-rest | jq \".status.availableReplicas == 0\"` ; do echo \"waiting for eventstore-database-rest\"; sleep 2; done; exit 0;"]
-        - name: wait-for-solr
+          command: ["sh", "-c", "while `curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt --header \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/deploymentconfigs/eventstore-database | jq \".status.availableReplicas == 0\"` ; do echo \"waiting for eventstore-database pod\"; sleep 2; done; exit 0;"]
+        - name: wait-for-solr-pod
           image: giantswarm/tiny-tools
-          command: ["sh", "-c", "while `curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt --header \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/deploymentconfigs/solr | jq \".status.availableReplicas == 0\"` ; do echo \"waiting for solr\"; sleep 2; done; exit 0;"]
+          command: ["sh", "-c", "while `curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt --header \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/deploymentconfigs/solr | jq \".status.availableReplicas == 0\"` ; do echo \"waiting for solr pod\"; sleep 2; done; exit 0;"]
         containers:
-        - image: 172.30.1.1:5000/${image-namespace}/todoapp-write:${project.version}
+        - image: 172.30.1.1:5000/${IMAGE_NAMESPACE_SOURCE}/todoapp-write:${PROJECT_VERSION_SOURCE}
           imagePullPolicy: IfNotPresent
           name: todoapp-write
           env:
@@ -330,9 +300,9 @@ objects:
                 fieldPath: metadata.namespace
           - name: JAVA_OPTIONS
             value: >-
-              -Deventstore.username=devuser
-              -Deventstore.password=devpassword
-              -Deventstore.database=eventstoredb
+              -Deventstore.username=${MONGODB_USER}
+              -Deventstore.password=${MONGODB_PASSWORD}
+              -Deventstore.database=${MONGODB_DATABASE}
               -Deventstore.remote-host=eventstore-database.$(KUBERNETES_NAMESPACE).svc
               -Deventstore.remote-port=27017
           livenessProbe:
@@ -362,6 +332,8 @@ objects:
 - apiVersion: v1
   kind: Route
   metadata:
+    labels:
+      app: todoapp-search
     name: todoapp-search
   spec:
     port:
@@ -372,6 +344,8 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
+    labels:
+      app: todoapp-search
     name: todoapp-search
   spec:
     ports:
@@ -384,6 +358,8 @@ objects:
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
+    labels:
+      app: todoapp-search
     name: todoapp-search
     annotations:
   spec:
@@ -398,14 +374,14 @@ objects:
           name: todoapp-search
       spec:
         initContainers:
-        - name: wait-for-eventstore-mongo-rest-api
+        - name: wait-for-eventstore-database-pod
           image: giantswarm/tiny-tools
-          command: ["sh", "-c", "while `curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt --header \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/deploymentconfigs/eventstore-database-rest | jq \".status.availableReplicas == 0\"` ; do echo \"waiting for eventstore-database-rest\"; sleep 2; done; exit 0;"]
-        - name: wait-for-solr
+          command: ["sh", "-c", "while `curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt --header \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/deploymentconfigs/eventstore-database | jq \".status.availableReplicas == 0\"` ; do echo \"waiting for eventstore-database pod\"; sleep 2; done; exit 0;"]
+        - name: wait-for-solr-pod
           image: giantswarm/tiny-tools
-          command: ["sh", "-c", "while `curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt --header \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/deploymentconfigs/solr | jq \".status.availableReplicas == 0\"` ; do echo \"waiting for solr\"; sleep 2; done; exit 0;"]
+          command: ["sh", "-c", "while `curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt --header \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/deploymentconfigs/solr | jq \".status.availableReplicas == 0\"` ; do echo \"waiting for solr pod\"; sleep 2; done; exit 0;"]
         containers:
-        - image: 172.30.1.1:5000/${image-namespace}/todoapp-search:${project.version}
+        - image: 172.30.1.1:5000/${IMAGE_NAMESPACE_SOURCE}/todoapp-search:${PROJECT_VERSION_SOURCE}
           imagePullPolicy: IfNotPresent
           name: todoapp-search
           env:
@@ -416,9 +392,9 @@ objects:
                 fieldPath: metadata.namespace
           - name: JAVA_OPTIONS
             value: >-
-              -Deventstore.username=devuser
-              -Deventstore.password=devpassword
-              -Deventstore.database=eventstoredb
+              -Deventstore.username=${MONGODB_USER}
+              -Deventstore.password=${MONGODB_PASSWORD}
+              -Deventstore.database=${MONGODB_DATABASE}
               -Deventstore.remote-host=eventstore-database.$(KUBERNETES_NAMESPACE).svc
               -Deventstore.remote-port=27017
               -Dsolr.baseSolrUrl=http://solr.$(KUBERNETES_NAMESPACE).svc:8983/solr/mycores
@@ -445,3 +421,16 @@ objects:
           ports:
           - containerPort: 8080
             protocol: TCP
+parameters:
+- name: MONGODB_USER
+  value: devuser
+- name: MONGODB_PASSWORD
+  value: devpassword
+- name: MONGODB_ADMIN_PASSWORD
+  value: adminpassword
+- name: MONGODB_DATABASE
+  value: eventstoredb
+- name: IMAGE_NAMESPACE_SOURCE
+  value: ${image-namespace}
+- name: PROJECT_VERSION_SOURCE
+  value: ${project.version}

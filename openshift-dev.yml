@@ -35,6 +35,8 @@ objects:
 - apiVersion: v1
   kind: Route
   metadata:
+    labels:
+      app: eventstore-database-rest
     name: eventstore-database-rest
   spec:
     port:
@@ -47,6 +49,8 @@ objects:
   metadata:
     annotations:
       template.openshift.io/expose-uri: mongodb://{.spec.clusterIP}:{.spec.ports[?(.name=="mongo")].port}
+    labels:
+      app: eventstore-database
     name: eventstore-database
   spec:
     ports:
@@ -141,11 +145,6 @@ objects:
             name: eventstore-database-data
         - name: eventstore-database-rest
           env:
-          - name: KUBERNETES_NAMESPACE
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: metadata.namespace
           - name: MONGODB_USER
             valueFrom:
               secretKeyRef:
@@ -195,6 +194,8 @@ objects:
 - apiVersion: v1
   kind: Route
   metadata:
+    labels:
+      app: solr
     name: solr
   spec:
     port:
