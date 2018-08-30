@@ -2,14 +2,14 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.damdamdeo</groupId>
-	<artifactId>noteapp-parent</artifactId>
+	<artifactId>todoapp-parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<modules>
-		<module>noteapp-api</module>
-		<module>noteapp-write</module>
-<!-- 		<module>noteapp-search</module> -->
-<!-- 		<module>noteapp-it</module> -->
+		<module>todoapp-api</module>
+		<module>todoapp-write</module>
+		<module>todoapp-search</module>
+		<module>todoapp-it</module>
 	</modules>
 
 	<properties>
