@@ -1,0 +1,33 @@
+spec:
+  template:
+    spec:
+      containers:
+        - env:
+          - name: OPENSHIFT_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-write-secret
+                key: user
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-write-secret
+                key: password
+          - name: MONGODB_DATABASE
+            valueFrom:
+              configMapKeyRef:
+                name: mongodb-write-config-map
+                key: database
+          - name: JAVA_OPTIONS
+            value: >-
+              -Deventstore.username=$(MONGODB_USER)
+              -Deventstore.password=$(MONGODB_PASSWORD)
+              -Deventstore.database=$(MONGODB_DATABASE)
+              -Deventstore.remote-host=eventstore-database.$(OPENSHIFT_NAMESPACE).svc
+              -Deventstore.remote-port=27017
+              -Dsolr.baseSolrUrl=http://solr.$(OPENSHIFT_NAMESPACE).svc:8983/solr/mycores

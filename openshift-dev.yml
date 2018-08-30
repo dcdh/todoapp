@@ -15,7 +15,33 @@ objects:
   subjects:
   - kind: ServiceAccount
     name: default
-# mongo write event store database (version ephemere)
+# Secret
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: mongodb-write-secret
+  data:
+    user: ZGV2dXNlcg==
+    password: ZGV2cGFzc3dvcmQ=
+    admin_password: YWRtaW5wYXNzd29yZA==
+# Config map
+- apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: mongodb-write-config-map
+  data:
+    database: eventstoredb
+# mongo write event store database (version ephemere) + rest
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: eventstore-database-rest
+  spec:
+    port:
+      targetPort: 3000
+    to:
+      kind: Service
+      name: eventstore-database
 - apiVersion: v1
   kind: Service
   metadata:
@@ -29,6 +55,11 @@ objects:
       port: 27017
       protocol: TCP
       targetPort: 27017
+    - name: mongo-rest
+      nodePort: 0
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
     selector:
       name: eventstore-database
     sessionAffinity: None
@@ -58,13 +89,25 @@ objects:
         - capabilities: {}
           env:
           - name: MONGODB_USER
-            value: devuser
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-write-secret
+                key: user
           - name: MONGODB_PASSWORD
-            value: devpassword
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-write-secret
+                key: password
           - name: MONGODB_ADMIN_PASSWORD
-            value: adminpassword
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-write-secret
+                key: admin_password
           - name: MONGODB_DATABASE
-            value: eventstoredb
+            valueFrom:
+              configMapKeyRef:
+                name: mongodb-write-config-map
+                key: database
           image: centos/mongodb-36-centos7
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -96,60 +139,6 @@ objects:
           volumeMounts:
           - mountPath: "/var/lib/mongodb/data"
             name: eventstore-database-data
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        volumes:
-        - emptyDir:
-            medium: ''
-          name: eventstore-database-data
-# eventstore mongo rest api
-- apiVersion: v1
-  kind: Route
-  metadata:
-    name: eventstore-database-rest
-  spec:
-    port:
-      targetPort: 3000
-    to:
-      kind: Service
-      name: eventstore-database-rest
-- kind: Service
-  apiVersion: v1
-  metadata:
-    name: eventstore-database-rest
-    labels:
-      name: eventstore-database-rest
-  spec:
-    type: LoadBalancer
-    ports:
-    - port: 3000
-      targetPort: 3000
-      protocol: TCP
-    selector:
-      name: eventstore-database-rest
-- kind: DeploymentConfig
-  apiVersion: v1
-  metadata:
-    annotations:
-    name: eventstore-database-rest
-    labels:
-      name: eventstore-database-rest
-  spec:
-    replicas: 1
-    selector:
-      name: eventstore-database-rest
-    triggers:
-      - type: ConfigChange
-    template:
-      metadata:
-        labels:
-          name: eventstore-database-rest
-      spec:
-        initContainers:
-        - name: wait-for-eventstore-database
-          image: giantswarm/tiny-tools
-          command: ["sh", "-c", "while `curl -s --cacert /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt --header \"Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)\" https://openshift.default.svc.cluster.local/oapi/v1/namespaces/$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)/deploymentconfigs/eventstore-database | jq \".status.availableReplicas == 0\"` ; do echo \"waiting for eventstore-database\"; sleep 2; done; exit 0;"]
-        containers:
         - name: eventstore-database-rest
           env:
           - name: KUBERNETES_NAMESPACE
@@ -157,14 +146,35 @@ objects:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
+          - name: MONGODB_USER
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-write-secret
+                key: user
+          - name: MONGODB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongodb-write-secret
+                key: password
+          - name: MONGODB_DATABASE
+            valueFrom:
+              configMapKeyRef:
+                name: mongodb-write-config-map
+                key: database
           - name: ME_CONFIG_DBSTRING
-            value: mongodb://devuser:devpassword@eventstore-database.$(KUBERNETES_NAMESPACE).svc:27017/eventstoredb
+            value: mongodb://$(MONGODB_USER):$(MONGODB_PASSWORD)@localhost:27017/$(MONGODB_DATABASE)
           - name: ME_CONFIG_READONLY
             value: y
           image: linuxenko/mongo-rest
           ports:
           - containerPort: 3000
             protocol: TCP
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        volumes:
+        - emptyDir:
+            medium: ''
+          name: eventstore-database-data
 # solr
 - apiVersion: v1
   kind: Service
@@ -271,4 +281,3 @@ objects:
         - emptyDir:
             medium: ''
           name: solr-log
-

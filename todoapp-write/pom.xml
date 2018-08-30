@@ -181,13 +181,6 @@
 								</config>
 							</enricher>
 							<resources>
-								<env>
-									<JAVA_OPTIONS>-Deventstore.username=devuser
-										-Deventstore.password=devpassword
-										-Deventstore.database=eventstoredb
-										-Deventstore.remote-host=eventstore-database.$(KUBERNETES_NAMESPACE).svc
-										-Deventstore.remote-port=27017</JAVA_OPTIONS>
-								</env>
 								<labels>
 									<all>
 										<project>${project.artifactId}</project>
@@ -199,7 +192,7 @@
 										<!-- <git-build-time>${git.build.time}</git-build-time> -->
 									</all>
 									<deployment>
-										<app>todoapp</app>
+										<app>todoapp-write</app>
 									</deployment>
 								</labels>
 							</resources>
