@@ -147,6 +147,7 @@ public class TodoFeatureITSteps {
 
 	@When("^A search is made using this word \"([^\"]*)\"$")
 	public void a_search_is_made_using_this_word(final String word) throws Throwable {
+		Thread.sleep(5000);// wait read asynchronous
 		reponse = RestAssured.given(new RequestSpecBuilder().setBaseUri(noteappSearchUrl.toURI()).build())
 				.given()
 				.accept(ContentType.JSON)
