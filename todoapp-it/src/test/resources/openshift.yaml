@@ -63,6 +63,8 @@ objects:
     replicas: 1
     selector:
       name: eventstore-database
+    triggers:
+    - type: ConfigChange
     strategy:
       type: Recreate
     template:
@@ -168,7 +170,7 @@ objects:
     selector:
       app: solr
     triggers:
-      - type: ConfigChange
+    - type: ConfigChange
     strategy:
       activeDeadlineSeconds: 21600
       rollingParams:
@@ -275,7 +277,7 @@ objects:
     selector:
       name: todoapp-write
     triggers:
-      - type: ConfigChange
+    - type: ConfigChange
     template:
       metadata:
         labels:
@@ -367,7 +369,7 @@ objects:
     selector:
       name: todoapp-search
     triggers:
-      - type: ConfigChange
+    - type: ConfigChange
     template:
       metadata:
         labels:
