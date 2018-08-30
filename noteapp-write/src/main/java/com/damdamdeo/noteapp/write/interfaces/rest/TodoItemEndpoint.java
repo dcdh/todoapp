@@ -23,7 +23,7 @@ public class TodoItemEndpoint {
 
 	@POST
 	@Path("createTodoItem")
-	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	@Consumes("application/x-www-form-urlencoded; charset=utf-8")
 	@Produces(MediaType.APPLICATION_JSON)
 	public TodoItemDto createTodoItem(@FormParam("todoId") final String todoId,
 			@FormParam("description") final String description) {

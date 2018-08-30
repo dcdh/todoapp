@@ -10,7 +10,7 @@ public class DefaultTodoItem implements TodoItem {
 	@Field(value = "id")
 	private String todoId;
 
-	@Field(value = "description_s")
+	@Field(value = "description_txt_fr")
 	private String description;
 
 	@Field(value = "status_s")

@@ -35,7 +35,7 @@ public class SolrTodoItemIndexedRepository implements TodoItemIndexedRepository 
 				.stream()
 				.map(word -> word + "~1")
 				.collect(Collectors.joining(" OR "));
-		solrQuery.setQuery(String.format("description_s:(%s)", wordsQuery));
+		solrQuery.setQuery(String.format("description_txt_fr:(%s)", wordsQuery));
 		try {
 			return solrClient.query(solrQuery)
 					.getResults()

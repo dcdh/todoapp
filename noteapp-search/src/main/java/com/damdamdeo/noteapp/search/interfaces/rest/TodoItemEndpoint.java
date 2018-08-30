@@ -26,7 +26,7 @@ public class TodoItemEndpoint {
 
 	@POST
 	@Path("search")
-	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	@Consumes("application/x-www-form-urlencoded; charset=utf-8")
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<TodoItemDto> search(@FormParam("description") final String description) {
 		return todoItemFacade.search(description);
