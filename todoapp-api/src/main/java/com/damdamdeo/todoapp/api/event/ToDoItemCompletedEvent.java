@@ -15,6 +15,8 @@ package com.damdamdeo.todoapp.api.event;
 
 import java.util.Objects;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * The ToDoItem belonging to the provided aggregate identifier is completed.
  *
@@ -34,6 +36,7 @@ public class ToDoItemCompletedEvent {
 
 	@Override
 	public String toString() {
-		return "ToDoItemCompletedEvent(" + todoId + ")";
+		return ToStringBuilder.reflectionToString(this);
 	}
+
 }

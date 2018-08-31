@@ -13,7 +13,10 @@
 
 package com.damdamdeo.todoapp.write.saga;
 
+import java.lang.invoke.MethodHandles;
 import java.time.Duration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.inject.Inject;
 
@@ -34,6 +37,9 @@ import com.damdamdeo.todoapp.write.domain.command.MarkToDoItemOverdueCommand;
  */
 public class ToDoSaga {
 
+	private static final Logger logger = Logger.getLogger(
+			MethodHandles.lookup().lookupClass().getName());
+
 	@Inject
 	private transient CommandGateway commandGateway;
 
@@ -45,6 +51,7 @@ public class ToDoSaga {
 	@StartSaga
 	@SagaEventHandler(associationProperty = "todoId")
 	public void onToDoItemCreated(final ToDoItemCreatedEvent event) {
+		logger.log(Level.INFO, "SagaEventHandling: {0}.", event);
 		deadline = eventScheduler.schedule(Duration.ofSeconds(5l),
 				new ToDoItemDeadlineExpiredEvent(event.getTodoId()));
 	}
@@ -52,12 +59,14 @@ public class ToDoSaga {
 	@EndSaga
 	@SagaEventHandler(associationProperty = "todoId")
 	public void onDeadlineExpired(final ToDoItemDeadlineExpiredEvent event) {
+		logger.log(Level.INFO, "SagaEventHandling: {0}.", event);
 		commandGateway.send(new MarkToDoItemOverdueCommand(event.getTodoId()));
 	}
 
 	@EndSaga
 	@SagaEventHandler(associationProperty = "todoId")
 	public void onToDoItemCompleted(final ToDoItemCompletedEvent event) {
+		logger.log(Level.INFO, "SagaEventHandling: {0}.", event);
 		if (deadline != null) {
 			eventScheduler.cancelSchedule(deadline);
 		}

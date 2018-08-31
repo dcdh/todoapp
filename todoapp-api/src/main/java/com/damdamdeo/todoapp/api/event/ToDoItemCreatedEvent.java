@@ -15,6 +15,8 @@ package com.damdamdeo.todoapp.api.event;
 
 import java.util.Objects;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * A new ToDoItem is created
  *
@@ -41,6 +43,7 @@ public class ToDoItemCreatedEvent {
 
 	@Override
 	public String toString() {
-		return "ToDoItemCreatedEvent(" + todoId + ", '" + description + "')";
+		return ToStringBuilder.reflectionToString(this);
 	}
+
 }

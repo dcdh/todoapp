@@ -15,6 +15,8 @@ package com.damdamdeo.todoapp.api.event;
 
 import java.util.Objects;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 /**
  * @author Allard Buijze
  */
@@ -32,6 +34,7 @@ public class ToDoItemDeadlineExpiredEvent {
 
 	@Override
 	public String toString() {
-		return "ToDoItemDeadlineExpiredEvent(" + todoId + ")";
+		return ToStringBuilder.reflectionToString(this);
 	}
+
 }
