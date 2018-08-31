@@ -9,11 +9,12 @@ import org.arquillian.cube.openshift.impl.enricher.RouteURL;
 import org.arquillian.cube.openshift.impl.requirement.RequiresOpenshift;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
+import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.RequestSpecBuilder;
-import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.response.ValidatableResponse;
 
 import cucumber.api.java.en.Given;
@@ -65,8 +66,8 @@ public class TodoFeatureITSteps {
 	public void a_new_Todo_item_is_created_having_this_todoId_and_this_description(final String todoId, final String description) throws Throwable {
 		RestAssured.given(new RequestSpecBuilder().setBaseUri(todoappWriteUrl.toURI()).build())
 			.given()
-			.accept(ContentType.JSON)
-			.contentType(ContentType.URLENC)
+			.accept("application/json")
+			.contentType("application/x-www-form-urlencoded; charset=utf-8")
 			.formParam("todoId", todoId)
 			.formParam("description", description)
 			.log().all() 
@@ -85,8 +86,8 @@ public class TodoFeatureITSteps {
 	public void the_todo_item_with_this_todoId_and_this_description_is_completed(final String todoId, final String description) throws Throwable {
 		RestAssured.given(new RequestSpecBuilder().setBaseUri(todoappWriteUrl.toURI()).build())
 			.given()
-			.accept(ContentType.JSON)
-			.contentType(ContentType.URLENC)
+			.accept("application/json")
+			.contentType("application/x-www-form-urlencoded; charset=utf-8")
 			.formParam("todoId", todoId)
 			.log().all() 
 			.when()
@@ -100,47 +101,67 @@ public class TodoFeatureITSteps {
 			.body("status", CoreMatchers.equalTo("COMPLETED"));
 	}
 
-	private class Event {
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	public static class Event {
 
 		private String aggregateIdentifier;
-		private Integer sequenceNumber;
 		private String payloadType;
-		private String serializedPayload;
-
+		public String getAggregateIdentifier() {
+			return aggregateIdentifier;
+		}
+		public void setAggregateIdentifier(String aggregateIdentifier) {
+			this.aggregateIdentifier = aggregateIdentifier;
+		}
+		public String getPayloadType() {
+			return payloadType;
+		}
+		public void setPayloadType(String payloadType) {
+			this.payloadType = payloadType;
+		}
 	}
 
-	private class Domainevents {
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	public static class Domainevents {
 
 		private List<Event> events;
+		public List<Event> getEvents() {
+			return events;
+		}
+		public void setEvents(List<Event> events) {
+			this.events = events;
+		}
 
 	}
 
 	@Then("^Theses events are expected \"([^\"]*)\" for this todoId \"([^\"]*)\"$")
 	public void theses_events_are_expected_for_this_todoId(final String events, final String todoId) throws Throwable {
-//		Arrays.asList(events.split(";"))
-//			.stream()
-//			.forEach(event -> {
-//				try {
-//					final Domainevents domainevents = RestAssured.given(new RequestSpecBuilder().setBaseUri(eventstoreDatabaseRestUrl.toURI()).build())
-//						.log()
-//						.all()
-//						.when()
-//						.get("/api/domainevents?events.payloadType=" + PACKAGE_EVENEMENTS_METIERS + event)
-//						.then()
-//						.log()
-//						.all()
-//						.statusCode(Matchers.equalTo(200))
-//						.extract()
-//						.as(Domainevents.class);
-//					System.out.println(domainevents);
-//				} catch (final Exception e) {
-//					throw new RuntimeException(e);
-//				}
-//			});
-//		TODO
-//		recuperer la liste NEGATIF faire une requete pour chaque me retournant une liste, extraire puis filtrer dessus :)
-//		generer l'event via xstream
-//		utiliser l'id
+		final Domainevents[] domainevents = RestAssured.given(new RequestSpecBuilder().setBaseUri(eventstoreDatabaseRestUrl.toURI()).build())
+				.log()
+				.all()
+				.when()
+				.get("/api/domainevents")
+				.then()
+				.log()
+				.all()
+				.statusCode(Matchers.equalTo(200))
+				.extract()
+				.as(Domainevents[].class);
+		Arrays.asList(events.split(","))
+			.stream()
+			.map(String::trim)
+			.forEach(eventAttendu -> {
+				try {
+					final String errorMsg = String.format("domainevents '%s' non trouvé pour le todoId '%s'", eventAttendu, todoId);
+					Assert.assertTrue(errorMsg, Arrays.asList(domainevents)
+						.stream()
+						.flatMap(d -> d.getEvents().stream())
+						.filter(event -> todoId.equals(event.aggregateIdentifier))
+						.filter(event -> event.payloadType.equals(PACKAGE_EVENEMENTS_METIERS + eventAttendu))
+						.count() > 0l);
+				} catch (final Exception e) {
+					throw new RuntimeException(e);
+				}
+			});
 	}
 
 	private ValidatableResponse reponse;
@@ -150,12 +171,12 @@ public class TodoFeatureITSteps {
 		Thread.sleep(5000);// wait read asynchronous
 		reponse = RestAssured.given(new RequestSpecBuilder().setBaseUri(todoappSearchUrl.toURI()).build())
 				.given()
-				.accept(ContentType.JSON)
-				.contentType(ContentType.URLENC)
+				.accept("application/json")
+				.contentType("application/x-www-form-urlencoded; charset=utf-8")
 				.formParam("description", word)
 				.log().all()
 				.when()
-				.post("/v1/todoItem/search")
+				.post("/api/v1/todoItem/search")
 				.then()
 				.log().all()
 				.and()
@@ -167,7 +188,7 @@ public class TodoFeatureITSteps {
 
 	@When("^The deadline is expired$")
 	public void the_deadline_is_expired() throws Throwable {
-		Thread.sleep(5000);// deadline expire at 2 sec. Having 3 sec more ensure that search query will be updated
+		Thread.sleep(10000);// deadline expire at 5 sec. Having 3 sec more ensure that search query will be updated
 	}
 
 	@Then("^The todo item with this todoId \"([^\"]*)\" and this description \"([^\"]*)\" is found and is completed$")
@@ -190,15 +211,15 @@ public class TodoFeatureITSteps {
 	public void the_todo_item_with_this_todoId_is_retrieved(final String todoId) throws Throwable {
 		reponse = RestAssured.given(new RequestSpecBuilder().setBaseUri(todoappSearchUrl.toURI()).build())
 				.given()
-				.accept(ContentType.JSON)
-				.get("/v1/todoItem/" + todoId)
+				.accept("application/json")
+				.get("/api/v1/todoItem/" + todoId)
 				.then()
 				.log().all()
 				.and()
 				.assertThat().statusCode(200)
-				.body("[0].todoId", CoreMatchers.notNullValue())
-				.body("[0].description", CoreMatchers.notNullValue())
-				.body("[0].status", CoreMatchers.notNullValue());
+				.body("todoId", CoreMatchers.notNullValue())
+				.body("description", CoreMatchers.notNullValue())
+				.body("status", CoreMatchers.notNullValue());
 	}
 
 	@Then("^The todo item with this todoId \"([^\"]*)\" and this description \"([^\"]*)\" is found and his deadline is expired$")

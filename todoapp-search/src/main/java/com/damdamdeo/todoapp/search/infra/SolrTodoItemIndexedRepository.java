@@ -33,7 +33,7 @@ public class SolrTodoItemIndexedRepository implements TodoItemIndexedRepository 
 		solrQuery.addSort("score", ORDER.desc);
 		final String wordsQuery = Arrays.asList(description.split(" "))
 				.stream()
-				.map(word -> word + "~1")
+				.map(word -> String.format("\"%s\"~10", word))
 				.collect(Collectors.joining(" OR "));
 		solrQuery.setQuery(String.format("description_txt_fr:(%s)", wordsQuery));
 		try {

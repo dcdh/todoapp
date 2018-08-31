@@ -45,7 +45,7 @@ public class ToDoSaga {
 	@StartSaga
 	@SagaEventHandler(associationProperty = "todoId")
 	public void onToDoItemCreated(final ToDoItemCreatedEvent event) {
-		deadline = eventScheduler.schedule(Duration.ofSeconds(2l),
+		deadline = eventScheduler.schedule(Duration.ofSeconds(5l),
 				new ToDoItemDeadlineExpiredEvent(event.getTodoId()));
 	}
 

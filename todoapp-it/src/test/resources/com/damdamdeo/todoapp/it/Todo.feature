@@ -12,8 +12,8 @@ Feature: Todo
     Then The todo item with this todoId "<todoId>" and this description "<description>" is found and is completed
 
     Examples: 
-      | todoId | description            | expected_events                             | word |
-      |      1 | Preparer pot de départ | ToDoItemCreatedEvent,ToDoItemCompletedEvent | pot  |
+      | todoId | description            | expected_events                             | word   |
+      |      1 | Preparer pot de départ | ToDoItemCreatedEvent,ToDoItemCompletedEvent | depart |
 
   Scenario Outline: nominal completed case
     Given the application todoapp-write is started
@@ -27,5 +27,5 @@ Feature: Todo
     Then The todo item with this todoId "<todoId>" and this description "<description>" is found and his deadline is expired
 
     Examples: 
-      | todoId | description          | expected_events                                   | word  |
-      |      2 | Terminer cette tâche | ToDoItemCreatedEvent,ToDoItemDeadlineExpiredEvent | cette |
+      | todoId | description          | expected_events                                   | word     |
+      |      2 | Terminer cette tâche | ToDoItemCreatedEvent,ToDoItemDeadlineExpiredEvent | terminer |
