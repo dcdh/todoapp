@@ -24,6 +24,8 @@ db.domainevents.find({'events.payloadType':{$regex: /.*\.ToDoItemCompletedEvent/
 db.domainevents.find({'events.payloadType':{$regex: /.*\.ToDoItemCreatedEvent/}})
 db.domainevents.find({'events.payloadType':{$regex: /.*\.ToDoItemDeadlineExpiredEvent/}})
 
+db.domainevents.drop()
+
 db.trackingtokens.find()
 
 db.trackingtokens.drop()
