@@ -3,7 +3,7 @@ apiVersion: v1
 metadata:
   name: wineforex-core-api
 objects:
-# role binding (view pour le service account default: permettre d'effectuer les requetes rest concernant le deployment config)
+# role binding (view for the service account default: allow pods to do rest request for deployment config)
 - apiVersion: authorization.openshift.io/v1
   groupNames: null
   kind: RoleBinding
@@ -14,7 +14,7 @@ objects:
   subjects:
   - kind: ServiceAccount
     name: default
-# mongo write event store database (version ephemere) + rest
+# mongo write event store database (ephemeral version) + rest
 - apiVersion: v1
   kind: Route
   metadata:
