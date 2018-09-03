@@ -32,66 +32,69 @@ objects:
   data:
     database: eventstoredb
 # job purge databases (don't use in production ! only for dev !)
-- apiVersion: batch/v1
-  kind: Job
-  metadata:
-    labels:
-      app: purge-databases
-    name: purge-databases
-  spec:
-    parallelism: 1
-    completions: 1
-    template:
-      metadata:
-        labels:
-          app: purge-databases
-        name: purge-databases
-      spec:
-        containers:
-        - name: purge-eventstore-database
-          env:
-          - name: KUBERNETES_NAMESPACE
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: metadata.namespace
-          - name: MONGODB_USER
-            valueFrom:
-              secretKeyRef:
-                name: mongodb-write-secret
-                key: user
-          - name: MONGODB_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: mongodb-write-secret
-                key: password
-          - name: MONGODB_ADMIN_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: mongodb-write-secret
-                key: admin_password
-          - name: MONGODB_DATABASE
-            valueFrom:
-              configMapKeyRef:
-                name: mongodb-write-config-map
-                key: database
-          image: centos/mongodb-36-centos7
-          command:
-              - "/bin/sh"
-              - "-i"
-              - "-c"
-              - mongo eventstore-database.$(KUBERNETES_NAMESPACE).svc:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
-                --eval="db = db.getSiblingDB('$(MONGODB_DATABASE)');db.domainevents.drop();db.trackingtokens.drop();db.snapshotevents.drop();db.sagas.drop();quit()"
-        - name: purge-solr
-          env:
-          - name: KUBERNETES_NAMESPACE
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: metadata.namespace
-          image: giantswarm/tiny-tools
-          command: ["sh", "-c", "curl http://solr.$(KUBERNETES_NAMESPACE).svc:8983/solr/update -H 'Content-type: text/xml' --data-binary '<delete><query>*:*</query></delete>'"]
-        restartPolicy: OnFailure
+# After reflexion I'll keep it but in fact it is useless because it cannot be reexecuted.
+# To execute a Job I have to create a new one ...
+# Also currently web console do not support job. cf. https://trello.com/c/MNqXVNHs
+#- apiVersion: batch/v1
+#  kind: Job
+#  metadata:
+#    labels:
+#      app: purge-databases
+#    name: purge-databases
+#  spec:
+#    parallelism: 1
+#    completions: 1
+#    template:
+#      metadata:
+#        labels:
+#          app: purge-databases
+#        name: purge-databases
+#      spec:
+#        containers:
+#        - name: purge-eventstore-database
+#          env:
+#          - name: KUBERNETES_NAMESPACE
+#            valueFrom:
+#              fieldRef:
+#                apiVersion: v1
+#                fieldPath: metadata.namespace
+#          - name: MONGODB_USER
+#            valueFrom:
+#              secretKeyRef:
+#                name: mongodb-write-secret
+#                key: user
+#          - name: MONGODB_PASSWORD
+#            valueFrom:
+#              secretKeyRef:
+#                name: mongodb-write-secret
+#                key: password
+#          - name: MONGODB_ADMIN_PASSWORD
+#            valueFrom:
+#              secretKeyRef:
+#                name: mongodb-write-secret
+#                key: admin_password
+#          - name: MONGODB_DATABASE
+#            valueFrom:
+#              configMapKeyRef:
+#                name: mongodb-write-config-map
+#                key: database
+#          image: centos/mongodb-36-centos7
+#          command:
+#              - "/bin/sh"
+#              - "-i"
+#              - "-c"
+#              - mongo eventstore-database.$(KUBERNETES_NAMESPACE).svc:27017/$MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+#                --eval="db = db.getSiblingDB('$(MONGODB_DATABASE)');db.domainevents.drop();db.trackingtokens.drop();db.snapshotevents.drop();db.sagas.drop();quit()"
+#        - name: purge-solr
+#          env:
+#          - name: KUBERNETES_NAMESPACE
+#            valueFrom:
+#              fieldRef:
+#                apiVersion: v1
+#                fieldPath: metadata.namespace
+#          image: giantswarm/tiny-tools
+#          command: ["sh", "-c", "curl http://solr.$(KUBERNETES_NAMESPACE).svc:8983/solr/update -H 'Content-type: text/xml' --data-binary '<delete><query>*:*</query></delete>'"]
+#        restartPolicy: OnFailure
 # mongo write event store database (version ephemere) + rest
 - apiVersion: v1
   kind: Route
