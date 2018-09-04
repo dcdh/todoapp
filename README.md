@@ -36,42 +36,44 @@ There are two versions of OpenShift: local one (using minishift) and server one.
 
 I personnaly used the server one on my laptop because minishift use a Virtual Box and it consumes a lot of resources on it (CPU and Disk IO) making my system hanging when a build is running and it makes my CPU burns :(
 
-> installation
+> installation **v3.9.0 arch linux**
 
-### configuration docker
+The following instructions are for **arch** linux with version 3.9.0 of OpenShift.
+
+Warning: OpenShift v3.9.0 support only max docker version of 1:17.09.0-1
+
+> docker setup
 
 sudo vim /usr/lib/systemd/system/docker.service
 
---insecure-registry 172.30.0.0/16
+add this **--insecure-registry 172.30.0.0/16**
+to obtain this
+
+```
+ExecStart=/usr/bin/dockerd -H fd:// \
+  --insecure-registry 172.30.0.0/16
+```
 
 sudo systemctl daemon-reload
 sudo systemctl restart docker
 
-## installation openshift
-
-I am using version 3.9.0 of OpenShift. So the following part will be only about version 3.9.0 of OpenShift.
-
-The following command are for **arch** linux.
+> openshift installation
 
 ```
-git clone https://aur.archlinux.org/openshift-origin-server-bin.git \
-  && cd openshift-origin-server-bin \
-  && makepkg
-  && sudo pacman -U openshift-origin-server-bin-3.9.0-1-x86_64.pkg.tar
-```
+git clone https://aur.archlinux.org/openshift-origin-server-bin.git
+cd openshift-origin-server-bin
+makepkg
+sudo pacman -U openshift-origin-server-bin-3.9.0-1-x86_64.pkg.tar
 
-```
 export KUBECONFIG=/var/lib/origin/openshift.local.config/master/admin.kubeconfig
 export CURL_CA_BUNDLE=/var/lib/origin/openshift.local.config/master/ca.crt
 sudo chmod +r /var/lib/origin/openshift.local.config/master/admin.kubeconfig
 ```
 
-
-TODO warning : version docker
-
-Just download the package at this place TODO unzip and execute it. You can used an installer using *ansible*. I have not used it.
+You can used an installer using *ansible*. I have not used it.
 
 To avoid pulling images when first deployment of applications like mongo, solr... (which can be long and make your first deployment failing) I recommand to execute this command line:
+
 ```
 docker pull openshift/origin-docker-registry:v3.9.0 \
   && docker pull openshift/origin-haproxy-router:v3.9.0 \
@@ -89,25 +91,11 @@ docker pull openshift/origin-docker-registry:v3.9.0 \
 
 oc cluster up --host-data-dir=/mydata_axon --use-existing-config  --service-catalog=false
 
-To ensure that OpenShift is started and running:
-TODO connection console
-TODO docker ps
+To ensure that OpenShift is started and running: a message should be displayed giving the url of the webconsole *https://127.0.0.1:8443*
+Also executing *docker ps* should display a lot of containers where names begin with *k8s*
 
 > stop
 
  If you want to stop OpenShift just run this command line:
 
 oc cluster down
-
-TODO docker ps no k8s containers
-
-# Issue :( faire un fichier à part : Negatif: saisir les problèmes dans github (il y en à 3)
-## probleme Thorntail + arquillian
-## Stack trace EventScheduler (mettre en lien le group Google)
-## QuartzEventScheduler;
-
-import org.axonframework.eventhandling.scheduling.quartz.QuartzEventScheduler;
-
-Use @PostConstruct and setters for defining dependencies by injection (like event bus). Too linked on Spring... :(
-
-
