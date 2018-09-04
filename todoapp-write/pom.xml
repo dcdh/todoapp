@@ -66,7 +66,7 @@
 		</dependency>
 		<!-- axon -->
 		<dependency>
-			<groupId>com.damdamdeo</groupId>
+			<groupId>org.axonframework</groupId>
 			<artifactId>axon-cdi</artifactId>
 		</dependency>
 		<dependency>

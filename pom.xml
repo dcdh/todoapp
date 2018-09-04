@@ -13,8 +13,7 @@
 	</modules>
 
 	<properties>
-		<version.org.axonframework>3.2.2</version.org.axonframework>
-		<version.axon-cdi>3.2.2-4-SNAPSHOT</version.axon-cdi>
+		<axon-cdi.version>0.1-SNAPSHOT</axon-cdi.version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
@@ -45,14 +44,15 @@
 		<dependencies>
 			<!-- Axon -->
 			<dependency>
-				<groupId>com.damdamdeo</groupId>
+				<groupId>org.axonframework</groupId>
 				<artifactId>axon-cdi</artifactId>
-				<version>${version.axon-cdi}</version>
+				<version>${axon-cdi.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.axonframework</groupId>
 				<artifactId>axon-mongo</artifactId>
-				<version>${version.org.axonframework}</version>
+<!-- TODO declare dependency directly in axon-cdi -->
+<version>3.3.5</version>
 			</dependency>
 			<!-- support -->
 			<dependency>
