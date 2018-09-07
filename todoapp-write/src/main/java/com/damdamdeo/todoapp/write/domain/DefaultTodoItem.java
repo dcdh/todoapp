@@ -1,7 +1,6 @@
 package com.damdamdeo.todoapp.write.domain;
 
 import org.axonframework.commandhandling.model.AggregateIdentifier;
-import org.axonframework.commandhandling.model.AggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 
 import com.damdamdeo.todoapp.api.Status;
@@ -18,8 +17,9 @@ import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import java.lang.invoke.MethodHandles;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.axonframework.cdi.stereotype.Aggregate;
 
-@AggregateRoot
+@Aggregate
 public class DefaultTodoItem implements TodoItem {
 
 	private static final Logger logger = Logger.getLogger(
