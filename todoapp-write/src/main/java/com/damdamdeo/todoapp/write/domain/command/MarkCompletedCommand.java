@@ -20,7 +20,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  * @author Jettro Coenradie
  */
-public class MarkCompletedCommand {
+public class MarkCompletedCommand implements CommandOnExistingTodoItem {
 
 	private final String todoId;
 
@@ -28,6 +28,7 @@ public class MarkCompletedCommand {
 		this.todoId = todoId;
 	}
 
+	@Override
 	public String getTodoId() {
 		return todoId;
 	}

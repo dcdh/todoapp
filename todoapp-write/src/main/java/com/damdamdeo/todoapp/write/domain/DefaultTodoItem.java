@@ -87,4 +87,9 @@ public class DefaultTodoItem implements TodoItem {
 		return status;
 	}
 
+	@Override
+	public String toString() {
+		return "DefaultTodoItem [todoId=" + todoId + ", description=" + description + ", status=" + status + "]";
+	}
+
 }

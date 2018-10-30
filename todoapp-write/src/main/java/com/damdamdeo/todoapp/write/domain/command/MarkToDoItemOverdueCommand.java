@@ -18,7 +18,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /**
  * @author Allard Buijze
  */
-public class MarkToDoItemOverdueCommand {
+public class MarkToDoItemOverdueCommand implements CommandOnExistingTodoItem {
 
 	private final String todoId;
 
@@ -26,6 +26,7 @@ public class MarkToDoItemOverdueCommand {
 		this.todoId = todoId;
 	}
 
+	@Override
 	public String getTodoId() {
 		return todoId;
 	}
