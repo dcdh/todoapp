@@ -8,6 +8,8 @@ import javax.inject.Named;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.mongo.MongoTemplate;
 import org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine;
 import org.axonframework.mongo.eventsourcing.eventstore.documentpercommit.DocumentPerCommitStorageStrategy;
@@ -56,6 +58,12 @@ public class AxonConfiguration {
 		xStreamSerializer.addAlias("ToDoItemCreatedEvent", ToDoItemCreatedEvent.class);
 		xStreamSerializer.addAlias("ToDoItemDeadlineExpiredEvent", ToDoItemDeadlineExpiredEvent.class);
 		return new MongoEventStorageEngine(xStreamSerializer, null, mongoTemplate(), new DocumentPerCommitStorageStrategy());
+	}
+
+	@Produces
+	@ApplicationScoped
+	public CorrelationDataProvider correlationDataProvider() {
+		return new SimpleCorrelationDataProvider("todoItem");
 	}
 
 	private MongoTemplate mongoTemplate() {
