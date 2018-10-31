@@ -69,10 +69,6 @@
 			<groupId>com.damdamdeo</groupId>
 			<artifactId>axon-cdi</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.axonframework</groupId>
-			<artifactId>axon-mongo</artifactId>
-		</dependency>
 		<!-- WildFly Thorntail Fractions -->
 		<dependency>
 			<groupId>org.wildfly.swarm</groupId>

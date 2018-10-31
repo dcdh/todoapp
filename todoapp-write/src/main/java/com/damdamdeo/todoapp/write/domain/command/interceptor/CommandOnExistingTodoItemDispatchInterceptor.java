@@ -23,7 +23,7 @@ public class CommandOnExistingTodoItemDispatchInterceptor implements MessageDisp
 //	private Repository<DefaultTodoItem> todoItemRepository;
 
 //	@Override
-//	public BiFunction<Integer, Message<?>, Message<?>> handle(List<Message<?>> messages) {
+//	public BiFunction<Integer, Message<?>, Message<?>> handle(List<? extends Message<?>> messages) {
 //		return (index, command) -> {
 //			if (command.getPayload() instanceof CommandOnExistingTodoItem) {
 //				final String todoId = ((CommandOnExistingTodoItem) command.getPayload()).getTodoId();
@@ -35,7 +35,7 @@ public class CommandOnExistingTodoItemDispatchInterceptor implements MessageDisp
 //		};
 //	}
 	@Override
-	public BiFunction<Integer, Message<?>, Message<?>> handle(final List<Message<?>> messages) {
+	public BiFunction<Integer, Message<?>, Message<?>> handle(List<? extends Message<?>> messages) {
 		return (index, command) -> {
 			if (command.getPayload() instanceof CommandOnExistingTodoItem) {
 				final String todoId = ((CommandOnExistingTodoItem) command.getPayload()).getTodoId();
