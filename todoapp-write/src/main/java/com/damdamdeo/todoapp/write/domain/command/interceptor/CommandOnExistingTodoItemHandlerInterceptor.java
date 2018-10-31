@@ -1,6 +1,7 @@
 package com.damdamdeo.todoapp.write.domain.command.interceptor;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Collections;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
@@ -34,6 +35,7 @@ public class CommandOnExistingTodoItemHandlerInterceptor implements MessageHandl
 			final DefaultTodoItem todoItem = todoItemRepository.load(todoId).invoke(Function.identity());
 			logger.info(String.format("Handling a command on an existing item '%s' on aggregate '%s' by '%s'.", command.toString(),
 					todoItem.toString(), this));
+			unitOfWork.transformMessage(message -> command.andMetaData(Collections.singletonMap("todoItem", todoItem)));
 		}
 		return interceptorChain.proceed();
 	}
