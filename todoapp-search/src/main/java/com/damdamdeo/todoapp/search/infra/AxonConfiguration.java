@@ -17,6 +17,10 @@ import org.axonframework.mongo.eventsourcing.tokenstore.MongoTokenStore;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.bson.Document;
 
+import com.arjuna.ats.internal.arjuna.recovery.PeriodicRecovery.Status;
+import com.damdamdeo.todoapp.api.event.ToDoItemCompletedEvent;
+import com.damdamdeo.todoapp.api.event.ToDoItemCreatedEvent;
+import com.damdamdeo.todoapp.api.event.ToDoItemDeadlineExpiredEvent;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
@@ -48,7 +52,12 @@ public class AxonConfiguration {
 	@Produces
 	@ApplicationScoped
 	public EventStorageEngine eventStorageEngine() {
-		return new MongoEventStorageEngine(null, null, mongoTemplate(), new DocumentPerCommitStorageStrategy());
+		final XStreamSerializer xStreamSerializer = new XStreamSerializer();
+		xStreamSerializer.addAlias("Status", Status.class);
+		xStreamSerializer.addAlias("ToDoItemCompletedEvent", ToDoItemCompletedEvent.class);
+		xStreamSerializer.addAlias("ToDoItemCreatedEvent", ToDoItemCreatedEvent.class);
+		xStreamSerializer.addAlias("ToDoItemDeadlineExpiredEvent", ToDoItemDeadlineExpiredEvent.class);
+		return new MongoEventStorageEngine(xStreamSerializer, null, mongoTemplate(), new DocumentPerCommitStorageStrategy());
 	}
 
 	@Produces
