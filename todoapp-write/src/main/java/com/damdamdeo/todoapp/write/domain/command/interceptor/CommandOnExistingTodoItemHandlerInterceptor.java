@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.Dependent;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import org.axonframework.commandhandling.model.Repository;
@@ -17,8 +17,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import com.damdamdeo.todoapp.write.domain.DefaultTodoItem;
 import com.damdamdeo.todoapp.write.domain.command.CommandOnExistingTodoItem;
 
-@Dependent
-// Attention same instance in all application
+@ApplicationScoped
 public class CommandOnExistingTodoItemHandlerInterceptor implements MessageHandlerInterceptor<Message<?>> {
 
 	private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass().getName());

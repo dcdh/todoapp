@@ -5,16 +5,15 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.logging.Logger;
 
-import javax.enterprise.context.Dependent;
+import javax.enterprise.context.ApplicationScoped;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import com.damdamdeo.todoapp.write.domain.command.CommandOnExistingTodoItem;
 
-// Repository are not working here because "No UnitOfWork is currently started for this thread."
-@Dependent
-//Attention same instance in all application
+// Repository are not working here because "No UnitOfWork is currently started for this thread." Use a MessageHandlerInterceptor instead !
+@ApplicationScoped
 public class CommandOnExistingTodoItemDispatchInterceptor implements MessageDispatchInterceptor<Message<?>> {
 
 	private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
